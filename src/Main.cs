@@ -85,50 +85,50 @@ namespace ArmaExtensionDotNet
             var func = GetString(function);
             var result = "";
 
-            List<String> parameters = [];
+            List<String> args = [];
             for (int i = 0; i < argc; i++)
             {
-                parameters.Add(GetString(argv[i]));
+                args.Add(GetString(argv[i]));
             }
 
             switch (func)
             {
                 case "sendResponse":
-                    if (parameters.Count != 1)
+                    if (args.Count != 1)
                     {
                         callback.Log("sendResponse - 1 parameter required");
                         return -1;
                     }
                     Task.Run(() =>
                     {
-                        callback.Log("sendResponse - received response " + parameters[0]);
+                        callback.Log("sendResponse - received response " + args[0]);
                     });
                     WriteOutput(output, "received response");
                     break;
 
                 case "helloWorld":
-                    if (parameters.Count != 1)
+                    if (args.Count != 1)
                     {
                         callback.Log("helloWorld - 1 parameter required");
                         return -1;
                     }
                     Task.Run(() =>
                     {
-                        callback.Invoke("hint", $"\"{parameters[0].Trim('"')}\"");
+                        callback.Invoke("hint", $"\"{args[0].Trim('"')}\"");
                     });
                     WriteOutput(output, "OK");
                     break;
 
                 case "notify":
                     // Example: Async callback to 3DEN Editor
-                    // Parameters: [message, type, duration, animate]
+                    // args: [message, type, duration, animate]
                     // - message: notification text
                     // - type: 0=notification (green), 1=warning (red) - optional, default 0
                     // - duration: seconds to display - optional, default 3
                     // - animate: true/false - optional, default true
-                    if (parameters.Count < 1 || parameters.Count > 4)
+                    if (args.Count < 1 || args.Count > 4)
                     {
-                        callback.Log("notify - requires 1-4 parameters: [message, type?, duration?, animate?]");
+                        callback.Log("notify - requires 1-4 args: [message, type?, duration?, animate?]");
                         return -1;
                     }
                     Task.Run(() =>
@@ -136,15 +136,15 @@ namespace ArmaExtensionDotNet
                         // Simulate some async work (e.g., file upload, API call, etc.)
                         Thread.Sleep(1000);
 
-                        // Extract parameters with defaults
-                        string message = parameters[0].Trim('"');
-                        int type = parameters.Count > 1 ? int.Parse(parameters[1]) : 0;
-                        int duration = parameters.Count > 2 ? int.Parse(parameters[2]) : 3;
-                        bool animate = parameters.Count > 3 ? bool.Parse(parameters[3]) : true;
+                        // Extract args with defaults
+                        string message = args[0].Trim('"');
+                        int type = args.Count > 1 ? int.Parse(args[1]) : 0;
+                        int duration = args.Count > 2 ? int.Parse(args[2]) : 3;
+                        bool animate = args.Count > 3 ? bool.Parse(args[3]) : true;
 
                         // Build argument list for BIS_fnc_3DENNotification
                         // Strings need quotes, numbers/booleans don't
-                        List<string> args = [
+                        List<string> parameters = [
                             $"\"{message}\"",
                             type.ToString(),
                             duration.ToString(),
@@ -152,14 +152,14 @@ namespace ArmaExtensionDotNet
                         ];
 
                         // Send notification to 3DEN Editor
-                        callback.Invoke("BIS_fnc_3DENNotification", SerializeList(args));
+                        callback.Invoke("BIS_fnc_3DENNotification", SerializeList(parameters));
                         callback.Log($"notify completed: message='{message}', type={type}, duration={duration}, animate={animate}");
                     });
                     WriteOutput(output, "OK");
                     break;
 
                 default:
-                    result = String.Format("Function: {0} - Params: {1} - Total extension calls: {2}", func, SerializeList(parameters), numCalls);
+                    result = String.Format("Function: {0} - Params: {1} - Total extension calls: {2}", func, SerializeList(args), numCalls);
                     WriteOutput(output, result);
                     return -1;
             }
@@ -186,8 +186,8 @@ namespace ArmaExtensionDotNet
         /// <returns>A string representing an Arma 3 array</returns>
         private static string SerializeList(List<String> list)
         {
-            var content = string.Join(",", [.. list]);
-            return string.Format("[{0}]", content);
+            var data = string.Join(",", [.. list]);
+            return string.Format("[{0}]", data);
         }
 
         /// <summary>
