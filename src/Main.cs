@@ -107,6 +107,19 @@ namespace ArmaExtensionDotNet
                     break;
 
                 case "helloWorld":
+                    if (parameters.Count != 1)
+                    {
+                        callback.Log("helloWorld - 1 parameter required");
+                        return -1;
+                    }
+                    Task.Run(() =>
+                    {
+                        callback.Invoke("hint", $"\"{parameters[0].Trim('"')}\"");
+                    });
+                    WriteOutput(output, "OK");
+                    break;
+
+                case "notify":
                     // Example: Async callback to 3DEN Editor
                     // Parameters: [message, type, duration, animate]
                     // - message: notification text
@@ -115,7 +128,7 @@ namespace ArmaExtensionDotNet
                     // - animate: true/false - optional, default true
                     if (parameters.Count < 1 || parameters.Count > 4)
                     {
-                        callback.Log("helloWorld - requires 1-4 parameters: [message, type?, duration?, animate?]");
+                        callback.Log("notify - requires 1-4 parameters: [message, type?, duration?, animate?]");
                         return -1;
                     }
                     Task.Run(() =>
@@ -138,9 +151,9 @@ namespace ArmaExtensionDotNet
                             animate.ToString().ToLower()
                         ];
 
-                        // Send notification to 3DEN Editor using SerializeList
+                        // Send notification to 3DEN Editor
                         callback.Invoke("BIS_fnc_3DENNotification", SerializeList(args));
-                        callback.Log($"helloWorld completed: message='{message}', type={type}, duration={duration}, animate={animate}");
+                        callback.Log($"notify completed: message='{message}', type={type}, duration={duration}, animate={animate}");
                     });
                     WriteOutput(output, "OK");
                     break;
