@@ -23,5 +23,10 @@ namespace ArmaExtensionDotNet
         {
             callback?.Invoke(ExtensionName, "execSqf", code);
         }
+
+        public void Invoke(string function, string data)
+        {
+            callback?.Invoke(ExtensionName, function, data);
+        }
     }
 }

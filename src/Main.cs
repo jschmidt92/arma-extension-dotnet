@@ -44,20 +44,27 @@ namespace ArmaExtensionDotNet
             numCalls++;
 
             var func = GetString(function);
-            if (func == "runSqfTest")
+            switch (func)
             {
-                Task.Run(() =>
-                {
-                    callback.Log("runSqfTest - begin");
-
-                    callback.ExecSqf("systemChat \"runSqfTest - Sleeping for 2 seconds\"");
-                    Thread.Sleep(2000);
-
-                    callback.ExecSqf("getPos player");
-
-                    callback.Log("runSqfTest - end");
-                });
-                WriteOutput(output, "started async task");
+                case "helloWorld":
+                    var result = String.Format("Hello, World!");
+                    WriteOutput(output, result);
+                    break;
+                case "runSqfTest":
+                    Task.Run(() =>
+                    {
+                        callback.Log("runSqfTest - begin");
+                        callback.ExecSqf("systemChat \"runSqfTest - Sleeping for 2 seconds\"");
+                        Thread.Sleep(2000);
+                        callback.ExecSqf("getPos player");
+                        callback.Log("runSqfTest - end");
+                    });
+                    WriteOutput(output, "started async task");
+                    break;
+                default:
+                    var defaultResult = String.Format("Function: {0} - Total extension calls: {1}", func, numCalls);
+                    WriteOutput(output, defaultResult);
+                    break;
             }
         }
 
@@ -76,6 +83,7 @@ namespace ArmaExtensionDotNet
             numCalls++;
 
             var func = GetString(function);
+            var result = "";
 
             List<String> parameters = [];
             for (int i = 0; i < argc; i++)
@@ -83,25 +91,65 @@ namespace ArmaExtensionDotNet
                 parameters.Add(GetString(argv[i]));
             }
 
-            if (func == "sendResponse")
+            switch (func)
             {
-                if (parameters.Count != 1)
-                {
-                    callback.Log("sendResponse - 1 parameter required");
-                    return -1;
-                }
+                case "sendResponse":
+                    if (parameters.Count != 1)
+                    {
+                        callback.Log("sendResponse - 1 parameter required");
+                        return -1;
+                    }
+                    Task.Run(() =>
+                    {
+                        callback.Log("sendResponse - received response " + parameters[0]);
+                    });
+                    WriteOutput(output, "received response");
+                    break;
 
-                Task.Run(() =>
-                {
-                    callback.Log("sendResponse - received response " + parameters[0]);
-                });
-                WriteOutput(output, "received response");
+                case "helloWorld":
+                    // Example: Async callback to 3DEN Editor
+                    // Parameters: [message, type, duration, animate]
+                    // - message: notification text
+                    // - type: 0=notification (green), 1=warning (red) - optional, default 0
+                    // - duration: seconds to display - optional, default 3
+                    // - animate: true/false - optional, default true
+                    if (parameters.Count < 1 || parameters.Count > 4)
+                    {
+                        callback.Log("helloWorld - requires 1-4 parameters: [message, type?, duration?, animate?]");
+                        return -1;
+                    }
+                    Task.Run(() =>
+                    {
+                        // Simulate some async work (e.g., file upload, API call, etc.)
+                        Thread.Sleep(1000);
+
+                        // Extract parameters with defaults
+                        string message = parameters[0].Trim('"');
+                        int type = parameters.Count > 1 ? int.Parse(parameters[1]) : 0;
+                        int duration = parameters.Count > 2 ? int.Parse(parameters[2]) : 3;
+                        bool animate = parameters.Count > 3 ? bool.Parse(parameters[3]) : true;
+
+                        // Build argument list for BIS_fnc_3DENNotification
+                        // Strings need quotes, numbers/booleans don't
+                        List<string> args = [
+                            $"\"{message}\"",
+                            type.ToString(),
+                            duration.ToString(),
+                            animate.ToString().ToLower()
+                        ];
+
+                        // Send notification to 3DEN Editor using SerializeList
+                        callback.Invoke("BIS_fnc_3DENNotification", SerializeList(args));
+                        callback.Log($"helloWorld completed: message='{message}', type={type}, duration={duration}, animate={animate}");
+                    });
+                    WriteOutput(output, "OK");
+                    break;
+
+                default:
+                    result = String.Format("Function: {0} - Params: {1} - Total extension calls: {2}", func, SerializeList(parameters), numCalls);
+                    WriteOutput(output, result);
+                    return -1;
             }
-            else
-            {
-                string result = String.Format("Function: {0} - Params: {1} - Total extension calls: {2}", func, SerializeList(parameters), numCalls);
-                WriteOutput(output, result);
-            };
 
             return 0;
         }
